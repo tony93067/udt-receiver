@@ -6,11 +6,12 @@ LB_PATH=/home/tony/論文code/論文code/實驗二/server/udt4/src
 TCP_PATH=/home/tony/論文code/論文code/實驗一/TCP/server/memcpy/test_tcp
 UDT_PATH=/home/tony/論文code/論文code/實驗二/server/udt4/app
 MSS=("1500" "1250" "1000" "750" "500" "250" "100")
+MSS1=("1500" "750" "100")
 BK=0
 export PATH 	
-for (( c=4; c<=4; c++ ))
+for (( c=1; c<=3; c++ ))
 do
-	for str in ${MSS[@]}
+	for str in ${MSS1[@]}
 	do
 		export LD_LIBRARYPATH=$LB_PATH
 		cd $UDT_PATH

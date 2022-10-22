@@ -315,6 +315,7 @@ private: // Status
    bool m_bOpened;                              // If the UDT entity has been opened
    int m_iBrokenCounter;			// a counter (number of GC checks) to let the GC tag this socket as disconnected
 
+   int last_EXPCount;
    int m_iEXPCount;                             // Expiration counter
    int m_iBandwidth;                            // Estimated bandwidth, number of packets per second
    int m_iRTT;                                  // RTT, in microseconds
@@ -400,6 +401,7 @@ private: // Trace
    int m_iSentNAKTotal;                         // total number of sent NAK packets
    int m_iRecvNAKTotal;                         // total number of received NAK packets
    int64_t m_llSndDurationTotal;		// total real time for sending
+   int m_timeout;
 
    uint64_t m_LastSampleTime;                   // last performance sample time
    int64_t m_llTraceSent;                       // number of pakctes sent in the last trace interval

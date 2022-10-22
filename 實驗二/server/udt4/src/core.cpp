@@ -54,9 +54,9 @@ written by
 #endif
 #include <cmath>
 #include <sstream>
+#include <iostream>
 #include "queue.h"
 #include "core.h"
-#include <iostream>
 
 using namespace std;
 
@@ -79,6 +79,7 @@ const int CUDT::m_iVersion = 4;
 const int CUDT::m_iSYNInterval = 10000;
 const int CUDT::m_iSelfClockInterval = 64;
 
+int first_timeout = 1;
 
 CUDT::CUDT()
 {
@@ -493,6 +494,7 @@ void CUDT::open()
    m_iPayloadSize = m_iPktSize - CPacket::m_iPktHdrSize;
 
    m_iEXPCount = 1;
+   last_EXPCount = 1;
    m_iBandwidth = 1;
    m_iDeliveryRate = 16;
    m_iAckSeqNo = 0;
@@ -502,6 +504,7 @@ void CUDT::open()
    m_StartTime = CTimer::getTime();
    m_llSentTotal = m_llRecvTotal = m_iSndLossTotal = m_iRcvLossTotal = m_iRetransTotal = m_iSentACKTotal = m_iRecvACKTotal = m_iSentNAKTotal = m_iRecvNAKTotal = 0;
    m_LastSampleTime = CTimer::getTime();
+   m_timeout = 0;
    m_llTraceSent = m_llTraceRecv = m_iTraceSndLoss = m_iTraceRcvLoss = m_iTraceRetrans = m_iSentACK = m_iRecvACK = m_iSentNAK = m_iRecvNAK = 0;
    m_llSndDuration = m_llSndDurationTotal = 0;
 
@@ -572,7 +575,7 @@ void CUDT::listen()
 
 void CUDT::connect(const sockaddr* serv_addr)
 {
-	cout << "enter CUDT::connect(const sockaddr* serv_addr)" << endl;
+   cout << "enter void CUDT::connect(const sockaddr* serv_addr)" << endl;
    CGuard cg(m_ConnectionLock);
 
    if (!m_bOpened)
@@ -696,10 +699,10 @@ void CUDT::connect(const sockaddr* serv_addr)
 
 int CUDT::connect(const CPacket& response) throw ()
 {
-	cout << "enter CUDT::connect(const CPacket& response)" << endl;
    // this is the 2nd half of a connection request. If the connection is setup successfully this returns 0.
    // returning -1 means there is an error.
    // returning 1 or 2 means the connection is in process and needs more handshake
+   cout << "enter int CUDT::connect(const CPacket& response) throw ()" << endl;
 
    if (!m_bConnecting)
       return -1;
@@ -819,7 +822,7 @@ POST_CONNECT:
 
 void CUDT::connect(const sockaddr* peer, CHandShake* hs)
 {
-	cout << "enter CUDT::connect(const sockaddr* peer, CHandShake* hs)" << endl;
+   cout << "enter void CUDT::connect(const sockaddr* peer, CHandShake* hs)" << endl;
    CGuard cg(m_ConnectionLock);
 
    // Uses the smaller MSS between the peers        
@@ -1602,7 +1605,9 @@ void CUDT::sample(CPerfMon* perf, bool clear)
    perf->pktSentNAK = m_iSentNAK;
    perf->pktRecvNAK = m_iRecvNAK;
    perf->usSndDuration = m_llSndDuration;
-
+   perf->timeout = m_timeout;
+   perf->exp_count = m_iEXPCount;
+  
    perf->pktSentTotal = m_llSentTotal;
    perf->pktRecvTotal = m_llRecvTotal;
    perf->pktSndLossTotal = m_iSndLossTotal;
@@ -2572,10 +2577,24 @@ void CUDT::checkTimers()
    //   CTimer::rdtsc(currtime);
    //   m_ullNextNAKTime = currtime + m_ullNAKInt;
    //}
-
    uint64_t next_exp_time;
    if (m_pCC->m_bUserDefinedRTO)
-      next_exp_time = m_ullLastRspTime + m_pCC->m_iRTO * m_ullCPUFrequency;
+   {
+      uint64_t m_ullMinRTOInt = 1000000 * m_ullCPUFrequency;
+      if(first_timeout == 0)
+      {
+         double timeout_number = pow(2.0, (double)(m_iEXPCount - 1));
+         uint64_t exp_int = (timeout_number * (m_iRTT + 4 * m_iRTTVar)) * m_ullCPUFrequency;
+
+         if(exp_int < m_ullMinRTOInt * timeout_number)
+            exp_int = m_ullMinRTOInt * timeout_number;
+         next_exp_time = m_ullLastRspTime + exp_int;
+      }
+      else
+      {
+         next_exp_time = m_ullLastRspTime + m_pCC->m_iRTO * m_ullCPUFrequency;
+      }
+   }
    else
    {
       uint64_t exp_int = (m_iEXPCount * (m_iRTT + 4 * m_iRTTVar) + m_iSYNInterval) * m_ullCPUFrequency;
@@ -2640,6 +2659,8 @@ void CUDT::checkTimers()
       }
 
       ++ m_iEXPCount;
+      ++ m_timeout;
+      first_timeout = 0;
       // Reset last response time since we just sent a heart-beat.
       m_ullLastRspTime = currtime;
    }
