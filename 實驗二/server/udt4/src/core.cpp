@@ -2587,7 +2587,9 @@ void CUDT::checkTimers()
          uint64_t exp_int = (timeout_number * (m_iRTT + 4 * m_iRTTVar)) * m_ullCPUFrequency;
 
          if(exp_int < m_ullMinRTOInt * timeout_number)
+         {
             exp_int = m_ullMinRTOInt * timeout_number;
+         }
          next_exp_time = m_ullLastRspTime + exp_int;
       }
       else
