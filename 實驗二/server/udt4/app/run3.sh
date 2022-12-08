@@ -9,7 +9,7 @@ MSS=("1500" "1250" "1000" "750" "500" "250" "100")
 MSS1=("1500" "750" "100")
 BK=3
 export PATH
-for (( c=2; c<=3; c++ ))
+for (( c=1; c<=1; c++ ))
 do
 	for str in ${MSS1[@]}
 	do
@@ -18,7 +18,7 @@ do
 		export LD_LIBRARYPATH=$LB_PATH
 		cd $UDT_PATH
 		./udtserver 5000 $str 1 $c $BK
-		killall -9 background_server
+		killall -9 background_server_downlink
 		sleep 10
 		date -R
 	done

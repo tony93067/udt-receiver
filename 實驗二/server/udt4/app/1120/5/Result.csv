@@ -1,0 +1,45 @@
+Method,UDT
+MSS,1500
+BK TCP,5
+Throughput(Mb/s),5.02298
+
+Method,UDT
+MSS,750
+BK TCP,5
+Throughput(Mb/s),4.70561
+
+Method,UDT
+MSS,100
+BK TCP,5
+Throughput(Mb/s),1.96216
+
+Method,CTCP
+MSS,1500
+BK TCP,5
+Throughput(Mb/s),4.82566
+
+Method,CTCP
+MSS,750
+BK TCP,5
+Throughput(Mb/s),5.34763
+
+Method,CTCP
+MSS,100
+BK TCP,5
+Throughput(Mb/s),1.55563
+
+Method,CBicTCP
+MSS,1500
+BK TCP,5
+Throughput(Mb/s),3.4438
+
+Method,CBicTCP
+MSS,750
+BK TCP,5
+Throughput(Mb/s),5.41846
+
+Method,CBicTCP
+MSS,100
+BK TCP,5
+Throughput(Mb/s),1.50238
+

@@ -1,0 +1,15 @@
+Method,UDT
+MSS,1500
+BK TCP,3
+Throughput(Mb/s),7.75558
+
+Method,UDT
+MSS,750
+BK TCP,3
+Throughput(Mb/s),8.02171
+
+Method,UDT
+MSS,100
+BK TCP,3
+Throughput(Mb/s),2.4517
+

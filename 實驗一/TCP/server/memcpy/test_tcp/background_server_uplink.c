@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr("140.117.171.182");
     
-    if(getsockopt(sd, IPPROTO_TCP, TCP_CONGESTION, buf, &len) != 0)
+    /*if(getsockopt(sd, IPPROTO_TCP, TCP_CONGESTION, buf, &len) != 0)
     {
         perror("getsockopt");
         return -1;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
             perror("setsockopt");
             return -1;
         }
-    }
+    }*/
     //reuse address
     setsockopt(sd,SOL_SOCKET,SO_REUSEADDR,&reuseaddr,sizeof(reuseaddr));
 

@@ -13,22 +13,27 @@
 #include <sys/times.h>
 #include <sys/mman.h>
 #include <arpa/inet.h>
+#include <netinet/tcp.h>
 #define BUFFER_SIZE 10000
 #define DIE(x) perror(x),exit(1)
 
 
 int main(int argc, char **argv)
 {
-    struct timeval timeout={0,0};//3s
+    // use to get socket info
+    char buf[256];
+    socklen_t len;
+    
     static struct sockaddr_in server;
     int sd, cd, i;
     int reuseaddr = 1;
     int client_len = sizeof(struct sockaddr_in);
     char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
     int port = atoi(argv[1]);
-    if(argc != 2)
+    
+    if(argc != 3)
     {
-        printf("Usage: %s <port number>\n",argv[0]);
+        printf("Usage: %s <port number> <CC Name>\n",argv[0]);
         exit(1);
     }
 
@@ -44,7 +49,24 @@ int main(int argc, char **argv)
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr("140.117.171.182");
-
+    
+    /*if(getsockopt(sd, IPPROTO_TCP, TCP_CONGESTION, buf, &len) != 0)
+    {
+        perror("getsockopt");
+        return -1;
+    }
+    printf("Current %s\n", buf);
+    
+    if(strcmp(argv[2], "bbr") == 0)
+    {
+        strcpy(buf, "bbr");
+        
+        if(setsockopt(sd, IPPROTO_TCP, TCP_CONGESTION, buf, len) != 0)
+        {
+            perror("setsockopt");
+            return -1;
+        }
+    }*/
     //reuse address
     setsockopt(sd,SOL_SOCKET,SO_REUSEADDR,&reuseaddr,sizeof(reuseaddr));
 

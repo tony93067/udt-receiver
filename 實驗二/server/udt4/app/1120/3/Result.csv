@@ -1,0 +1,30 @@
+Method,CTCP
+MSS,1500
+BK TCP,3
+Throughput(Mb/s),7.68257
+
+Method,CTCP
+MSS,750
+BK TCP,3
+Throughput(Mb/s),7.83295
+
+Method,CTCP
+MSS,100
+BK TCP,3
+Throughput(Mb/s),1.98881
+
+Method,CBicTCP
+MSS,1500
+BK TCP,3
+Throughput(Mb/s),8.48039
+
+Method,CBicTCP
+MSS,750
+BK TCP,3
+Throughput(Mb/s),8.71998
+
+Method,CBicTCP
+MSS,100
+BK TCP,3
+Throughput(Mb/s),2.00546
+

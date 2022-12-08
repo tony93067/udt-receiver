@@ -12,56 +12,29 @@
 #include <pthread.h>
 #include <sys/times.h>
 #include <sys/mman.h>
-
+#include <arpa/inet.h>
 #define BUFFER_SIZE 10000
 #define DIE(x) perror(x),exit(1)
-#define PORT 9999
 
-
-/***global value***/
-int num_client = 1;
-//int cd = 0;
-/******************/
-
-void *send_packet(void *arg)
-{
-    int j = 0;
-    // send function return value
-    int cd = *((int *)arg);
-    num_client++;
-    printf("Start Receiving Packet!\n");
-    char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
-    //send packet
-    while(1)
-    {
-        memset(buffer, '1', BUFFER_SIZE);
-        if(send(cd, buffer, BUFFER_SIZE, 0) < 0)
-        {
-            DIE("send");
-        }
-    }
-    //close connection
-    close(cd);
-    pthread_exit(0);
-}
 
 int main(int argc, char **argv)
 {
+    struct timeval timeout={0,0};//3s
     static struct sockaddr_in server;
     int sd, cd, i;
     int reuseaddr = 1;
     int client_len = sizeof(struct sockaddr_in);
-    pthread_t p[100];
-    int ret = 0;
-
-    if(argc != 1)
+    char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
+    int port = atoi(argv[1]);
+    if(argc != 3)
     {
-        printf("Usage: %s\n",argv[0]);
+        printf("Usage: %s <port number>\n",argv[0]);
         exit(1);
     }
 
     //open socket
     sd = socket(AF_INET,SOCK_STREAM,0);
+    //int ret=setsockopt(sd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
     if(sd < 0)
     {
         DIE("socket");
@@ -69,8 +42,8 @@ int main(int argc, char **argv)
 
     /* Initialize address. */
     server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(port);
+    server.sin_addr.s_addr = inet_addr("140.117.171.182");
 
     //reuse address
     setsockopt(sd,SOL_SOCKET,SO_REUSEADDR,&reuseaddr,sizeof(reuseaddr));
@@ -82,22 +55,23 @@ int main(int argc, char **argv)
     }
 
     //listen
-    if(listen(sd,1) < 0)
+    if(listen(sd,15) < 0)
     {
         DIE("listen");
     }
    
     //num_packets = atoi(argv[1]);
+    cd = accept(sd,(struct sockaddr *)&server,&client_len);
+    printf("connection accept\n");
     while(1)
-    {  
-        cd = accept(sd,(struct sockaddr *)&server,&client_len);
-        if((ret = pthread_create(&p[i], NULL, send_packet, (void*)&cd)) != 0)
+    {
+        memset(buffer, '\0', BUFFER_SIZE);
+        memset(buffer, '1', BUFFER_SIZE);
+        if(send(cd, buffer,sizeof(buffer),0) < 0)
         {
-            fprintf(stderr, "can't create thread:%s\n", strerror(ret));
-            exit(1);
-        }else
-        	printf("client %d\n", i);
-        i++;
+            printf("%s\n", strerror(errno));
+        }
+
     }
     //close connection
     close(sd);

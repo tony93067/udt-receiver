@@ -1,2 +1,4 @@
 all: server
-	gcc -o server server.c -lnsl
+
+% : %.c
+	gcc -o $@ $< -lnsl -lpthread 

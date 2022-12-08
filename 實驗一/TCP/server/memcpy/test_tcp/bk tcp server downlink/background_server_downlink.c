@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     int client_len = sizeof(struct sockaddr_in);
     char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
     int port = atoi(argv[1]);
-    if(argc != 2)
+    if(argc != 3)
     {
         printf("Usage: %s <port number>\n",argv[0]);
         exit(1);

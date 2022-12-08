@@ -560,7 +560,7 @@ DWORD WINAPI monitor(LPVOID s)
     UDT::TRACEINFO perf;
     if(mode == 1)
     {
-        strcat(result_addr, "Receiver_UDT_Monitor_");
+        strcat(result_addr, "Sender_UDT_Monitor_");
         strcat(result_addr, "MSS");
         strcat(result_addr, temp_MSS);
         strcat(result_addr, "_TCP");
@@ -570,7 +570,7 @@ DWORD WINAPI monitor(LPVOID s)
     }
     else if(mode == 2)
     {
-        strcat(result_addr, "Receiver_CTCP_Monitor_");
+        strcat(result_addr, "Sender_CTCP_Monitor_");
         strcat(result_addr, "MSS");
         strcat(result_addr, temp_MSS);
         strcat(result_addr, "_TCP");
@@ -580,7 +580,7 @@ DWORD WINAPI monitor(LPVOID s)
     }
     else if (mode == 3)
     {
-        strcat(result_addr, "Receiver_CBiCTCP_Monitor_");
+        strcat(result_addr, "Sender_CBiCTCP_Monitor_");
         strcat(result_addr, "MSS");
         strcat(result_addr, temp_MSS);
         strcat(result_addr, "_TCP");
@@ -601,8 +601,7 @@ DWORD WINAPI monitor(LPVOID s)
     // record monitor data
     //monitor_fd = open("monitor.txt", O_RDWR | O_CREAT | O_APPEND, S_IRWXU);
     //sprintf(str, "MSS : %d\nSendRate(Mb/s)\tRTT(ms)\tCWnd\tPktSndPeriod(us)\tRecvACK\tRecvNAK\n", MSS);
-    fout << "MSS," << MSS << endl;
-    fout << "SendRate(Mb/s)," << "ReceiveRate(Mb/s)," << "RecvPackets," << "Send Loss," << "Recv Loss," <<"RTT(ms)," << "CWnd," << "FlowWindow," << "Retrans," << "PktSndPeriod(us)," << "SendACK," <<"SendNAK," <<"RecvACK," << "RecvNAK," << "EstimatedBandwidth(Mb/s)," << "Retrans_Total, " << "NAK_TotalSent," << "Total Send Loss," << "Total Recv Loss"<< endl;
+    fout << "SendPacket," <<"SendRate(Mb/s)," << "FlightSize," << "ReceiveRate(Mb/s)," << "Send Loss," << "Recv Loss," << "RTT(ms)," << "CWnd," << "FlowWindow," << "Retrans," << "PktSndPeriod(us)," << "RecvACK," << "RecvNAK," << "EstimatedBandwidth(Mb/s)," << "Retrans_Total," << "NAK_TotalRecv," << "Total Send Loss," << "Total Recv Loss," << "Timeout," << "ExpCount," << "usSndDuration"<< endl;
     //cout << "SendRate(Mb/s)\tRTT(ms)\tCWnd\tPktSndPeriod(us)\tRecvACK\tRecvNAK" << endl;
     while (true)
     {
@@ -617,8 +616,8 @@ DWORD WINAPI monitor(LPVOID s)
             cout << "perfmon: " << UDT::getlasterror().getErrorMessage() << endl;
             break;
         }
-        fout << perf.mbpsSendRate << "," << perf.mbpsRecvRate << "," << perf.pktRecv << "," << perf.pktSndLossTotal << "," << perf.pktRcvLoss << "," << perf.msRTT << "," << perf.pktCongestionWindow << ","
-            << perf.pktFlowWindow << "," << perf.pktRetrans << "," << perf.usPktSndPeriod << "," << perf.pktSentACK << "," << perf.pktSentNAK << ","<< perf.pktRecvACK << "," << perf.pktRecvNAK << "," << perf.mbpsBandwidth << "," << perf.pktRetransTotal << "," << perf.pktSentNAKTotal << "," << perf.pktSndLossTotal << "," << perf.pktRcvLossTotal << endl;
+        fout << perf.pktSent << "," << perf.mbpsSendRate << "," << perf.pktFlightSize << "," << perf.mbpsRecvRate << "," << perf.pktSndLoss << "," << perf.pktRcvLoss << ","<< perf.msRTT << "," << perf.pktCongestionWindow << ","
+            << perf.pktFlowWindow << "," << perf.pktRetrans << "," << perf.usPktSndPeriod << "," << perf.pktRecvACK << "," << perf.pktRecvNAK << "," << perf.mbpsBandwidth << "," << perf.pktRetransTotal << "," << perf.pktRecvNAKTotal << "," << perf.pktSndLossTotal << "," << perf.pktRcvLossTotal << "," << perf.timeout << "," << perf.exp_count << "," << perf.usSndDuration << endl;
         monitor_time++;
         //cout << monitor_time << endl;
         if(monitor_time >= 300)

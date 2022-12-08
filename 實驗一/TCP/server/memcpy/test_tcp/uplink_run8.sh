@@ -8,7 +8,7 @@ p=8888
 while [ "$i" -le "8" ]
 do
 echo "Server" $i "generate"
-./background_server_uplink $p &
+./background_server_uplink $p "cubic" &
 sleep 1
 i=$(($i+1))
 p=$(($p+1))

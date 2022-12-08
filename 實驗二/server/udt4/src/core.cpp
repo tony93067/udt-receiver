@@ -80,6 +80,7 @@ const int CUDT::m_iSYNInterval = 10000;
 const int CUDT::m_iSelfClockInterval = 64;
 
 int first_timeout = 1;
+double timeout_number = 0;
 
 CUDT::CUDT()
 {
@@ -753,6 +754,7 @@ POST_CONNECT:
    // Re-configure according to the negotiated values.
    m_iMSS = m_ConnRes.m_iMSS;
    m_iFlowWindowSize = m_ConnRes.m_iFlightFlagSize;
+   cout << "m_iFlowWindowSize " << m_iFlowWindowSize << endl;
    m_iPktSize = m_iMSS - 28;
    m_iPayloadSize = m_iPktSize - CPacket::m_iPktHdrSize;
    m_iPeerISN = m_ConnRes.m_iISN;
@@ -1606,7 +1608,7 @@ void CUDT::sample(CPerfMon* perf, bool clear)
    perf->pktRecvNAK = m_iRecvNAK;
    perf->usSndDuration = m_llSndDuration;
    perf->timeout = m_timeout;
-   perf->exp_count = m_iEXPCount;
+   perf->exp_count = timeout_number;
   
    perf->pktSentTotal = m_llSentTotal;
    perf->pktRecvTotal = m_llRecvTotal;
@@ -2583,12 +2585,12 @@ void CUDT::checkTimers()
       uint64_t m_ullMinRTOInt = 1000000 * m_ullCPUFrequency;
       if(first_timeout == 0)
       {
-         double timeout_number = pow(2.0, (double)(m_iEXPCount - 1));
+         timeout_number = pow(2.0, (double)(m_iEXPCount - 1));
          uint64_t exp_int = (timeout_number * (m_iRTT + 4 * m_iRTTVar)) * m_ullCPUFrequency;
 
          if(exp_int < m_ullMinRTOInt * timeout_number)
          {
-            exp_int = m_ullMinRTOInt * timeout_number;
+           exp_int = m_ullMinRTOInt * timeout_number;
          }
          next_exp_time = m_ullLastRspTime + exp_int;
       }
@@ -2601,7 +2603,9 @@ void CUDT::checkTimers()
    {
       uint64_t exp_int = (m_iEXPCount * (m_iRTT + 4 * m_iRTTVar) + m_iSYNInterval) * m_ullCPUFrequency;
       if (exp_int < m_iEXPCount * m_ullMinExpInt)
+      {
          exp_int = m_iEXPCount * m_ullMinExpInt;
+      }
       next_exp_time = m_ullLastRspTime + exp_int;
    }
 
