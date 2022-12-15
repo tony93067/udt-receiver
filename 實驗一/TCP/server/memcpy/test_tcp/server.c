@@ -17,21 +17,41 @@
 
 #define DIE(x) perror(x),exit(1)
 #define PORT 12000
+#define BUFFER_SIZE 10000
 
 char* sys_time;
 /***global value***/
+int sd;           //server socket file descriptor
 int num_client = 1;
 int data_size = 0;
 double ticks;
 int Background_TCP_Number = 0;
 int t = 0;
+char cc_method[20] = {0};
 //int cd = 0;
 /******************/
 void* timer(void* arg)
 {
+    char file_name[50] = {0};
+    char str[100] = {0};
+    struct tcp_info t_info;
+    socklen_t t_info_len = sizeof(t_info);
+    sprintf(file_name, "%s_%s_%d.csv", "TCP_info", cc_method, Background_TCP_Number);
+    int cd = *((int *)arg);
+    int ex = open(file_name, O_CREAT|O_TRUNC|O_RDWR, S_IRWXU);
+    sprintf(str, "%s\t%s\t%s\n", "Time", "CWND", "Total Retrans");
+    write(ex, str, 100);
     while(1)
     {
+        memset(str, '\0', 100);
+        if(getsockopt( cd, IPPROTO_TCP, TCP_INFO, &t_info, &t_info_len) != 0)
+        {
+            printf("getsockopt error\n");
+            exit(1);
+        }
         t++;
+        sprintf(str, "%d\t%d\t%d\n", t, t_info.tcpi_snd_cwnd, t_info.tcpi_total_retrans);
+        write(ex, str, 100);
         sleep(1);
         //printf("t %d\n", t);
         if(t == 301)
@@ -54,8 +74,7 @@ void *send_packet(void *arg)
     printf("Start Sending Packet!\n");
 
     // open file
-    fd = open("/home/tony/論文code/論文code/實驗一/file.txt", O_RDONLY, S_IRWXU);
-    ex = open("TCP_Sender.csv", O_CREAT|O_RDWR|O_APPEND, S_IRWXU);
+    fd = open("/home/tony/論文code/論文code/file.txt", O_RDONLY, S_IRWXU);
     
     int len;
     char* file_addr;
@@ -79,15 +98,31 @@ void *send_packet(void *arg)
         printf("mmap error\n");
         exit(1);
     }
-    if(pthread_create(&t1, NULL, timer, NULL) != 0)
+    if(pthread_create(&t1, NULL, timer, (void*)&cd) != 0)
     {
         printf("can't create t1 thread\n");
         exit(1);
     }
+    int total_send_size = 0;
+    int read_size = 0;
+    char send_buf[BUFFER_SIZE] = {0};
+    /*
     if((send_size = send(cd, (char *)file_addr, sb.st_size, 0)) < 0)
     {
         DIE("send");
+    }*/
+    
+    while(1)
+    {
+        if((send_size = send(cd, (char *)file_addr, sb.st_size, 0)) < 0)
+        {
+            DIE("send");
+        }
+        total_send_size += send_size;
+        if(total_send_size == 2*sb.st_size)
+            break;
     }
+    
     
     if(munmap(file_addr, sb.st_size) == -1)
     {
@@ -95,23 +130,6 @@ void *send_packet(void *arg)
         exit(1);
     }
     close(fd);
-    //ticks = sysconf(_SC_CLK_TCK);
-    /*************/
-    /*char str[100] = {0};
-    sprintf(str, "%s\n", "TCP");
-    write(ex, str, sizeof(str));
-    
-    memset(str, '\0', sizeof(str));
-    sprintf(str, "%s\t%s\n", "程式執行時間", sys_time);
-    write(ex, sys_time, strlen(sys_time));
-    
-    memset(str, '\0', sizeof(str));
-    sprintf(str, "%s\t%d\n", "Background_TCP_Number", Background_TCP_Number);
-    write(ex, str, sizeof(str));
-    */
-    //fprintf(ex, "%s\n", "TCP");
-    //fprintf(ex, "%s\t%f\n", "Recv Time", execute_time);
-    //close connection
     close(ex);
     close(cd);
     pthread_exit(0);
@@ -121,7 +139,7 @@ int main(int argc, char **argv)
 {
    
     static struct sockaddr_in server;
-    int sd,cd; 
+    int cd; 
     int reuseaddr = 1;
     char buf[256];
     socklen_t len;
@@ -136,7 +154,7 @@ int main(int argc, char **argv)
         printf("Usage: %s %s %s\n",argv[0], "Background_TCP_Number", "Congestion Control");
         exit(1);
     }
-
+    strcpy(cc_method, argv[2]);
     //open socket
     sd = socket(AF_INET,SOCK_STREAM, 0);
     if(sd < 0)

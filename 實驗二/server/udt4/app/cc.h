@@ -8,6 +8,7 @@ class CTCP: public CCC
 public:
    void init()
    {
+      printf("CTCP init\n");
       m_bSlowStart = true;
       m_issthresh = 83333;
 
@@ -22,6 +23,7 @@ public:
    {
       if (ack == m_iLastACK)
       {
+      	 printf("dup ack\n");
          if (3 == ++ m_iDupACKCount)
             DupACKAction();
          else if (m_iDupACKCount > 3)
@@ -109,9 +111,9 @@ public:
    virtual void onTimeout()
    {
       m_issthresh = getPerfInfo()->pktFlightSize / 2;
+
       //m_dMaxWin = getPerfInfo()->pktFlightSize;
       m_dMaxWin = m_iDefaultMaxWin;
-
       if (m_issthresh < 2)
          m_issthresh = 2;
       
@@ -210,6 +212,7 @@ protected:
 
    virtual void DupACKAction()
    {
+      printf("enter dup acktion\n");
       if (m_dCWndSize < m_iLowWindow) // if in TCP reno reset all parameter
       {
          m_issthresh = getPerfInfo()->pktFlightSize / 2;
@@ -229,7 +232,7 @@ protected:
       {
          m_dPreMax = m_dMaxWin;
          if(m_dPreMax == m_iDefaultMaxWin)
-         	m_dPreMax = 0;
+            m_dPreMax = 0;
          m_dMaxWin = m_dCWndSize;
          m_dCWndSize *= 0.875;
          m_dMinWin = m_dCWndSize;

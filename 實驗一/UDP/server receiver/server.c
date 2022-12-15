@@ -13,12 +13,12 @@
 #include <pthread.h>
 #
 #define SERVER_PORT 8888
-#define BUFFER_SIZE 1500
+#define BUFFER_SIZE 10000
 
 struct tms time_start, time_end;
 clock_t old, new;
 int t = 0;
-double total_recv_packets = 0;
+long long int total_recv_packets = 0;
 int Background_TCP_Number = 0;
 double ticks;
 
@@ -27,15 +27,39 @@ void* timer(void* arg)
 	int ex = open("UDP_Receiver.csv", O_CREAT|O_RDWR|O_APPEND, S_IRWXU);
 	while(1)
 	{
-		sleep(1);
 		t++;
-		if(t == 300)
+		sleep(1);
+		if(t == 301)
 		{
 			if((new = times(&time_end)) == -1)
 			{
 				printf("time error\n");
 				exit(1);
 			}
+			ticks = sysconf(_SC_CLK_TCK);
+    		double execute_time = (new - old)/ticks;
+			printf("Execute Time: %2.2f\n", execute_time);
+
+			printf("total recv size %lld Bytes\n", total_recv_packets*BUFFER_SIZE);
+			/*************/
+			char str[100] = {0};
+			sprintf(str, "%s\n", "UDP");
+			write(ex, str, sizeof(str));
+			
+			memset(str, '\0', sizeof(str));
+    		sprintf(str, "%s\t%d\n", "Background_TCP_Number", Background_TCP_Number);
+    		write(ex, str, sizeof(str));
+    		
+    		double throughput = (total_recv_packets*BUFFER_SIZE*8/1000000);
+    		
+    		memset(str, '\0', sizeof(str));
+    		sprintf(str, "%s\t%lf\n", "Throughput(Mb/s)", throughput/execute_time);
+    		write(ex, str, sizeof(str));
+    		
+    		memset(str, '\0', sizeof(str));
+    		sprintf(str, "LossRate:\t%f %% (%lld/375000)\n\n", (double)total_recv_packets/375000, total_recv_packets);
+    		write(ex, str, sizeof(str));
+    		close(ex);
     		break;
 		}
 	}
@@ -92,37 +116,17 @@ int main(int argc, char* argv[])
     printf("Msg from client: %s\n", buffer);
     
     // start to send to client
-    printf("Server Start Sending :\n");
+    printf("Server Start Receiving :\n");
 
     int already_sent = 0;
     int start = 0;            // use to record received packet number
-    int fd = open("/home/tony/論文code/論文code/file.txt", O_RDONLY, S_IRWXU);
-    int total_send_size = 0;
-    int count = 0;
-    if(fd == -1)
-    {
-    	perror("open\n");
-    	exit(EXIT_FAILURE);
-    }
-    if(fstat(fd, &sb) == -1)
-    {
-    	printf("fstat error\n");
-    	exit(1);
-    }
-    char* file_addr = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     
-    if(file_addr == MAP_FAILED)
-    {
-    	printf("mmap error\n");
-    	exit(1);
-    }
     memset(buffer, '\0', BUFFER_SIZE);
     strcpy(buffer, "Server Reply");
     send_size = sendto(server_fd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_length);
     while(1)
     {
         memset(buffer, '\0', BUFFER_SIZE);
-        memcpy(buffer, file_addr + total_send_size, BUFFER_SIZE);
         if(start == 0)
         {
             if((old = times(&time_start)) == -1)
@@ -137,22 +141,13 @@ int main(int argc, char* argv[])
     		}
             
         }
-        if ((send_size = sendto(server_fd, buffer, sizeof(buffer), 0, (struct sockaddr*)&client_addr, client_length)) < 0){
-            printf("sendto error\n");
+        if ((recv_size = recvfrom(server_fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&client_addr, &client_length)) < 0){
+            printf("recvfrom error\n");
             return -1;
         }
+        total_recv_packets++;
         start++;
-        usleep(120);
-        
-        if(t == 300)
-        	break;
-        total_send_size += send_size;
-        if(total_send_size == sb.st_size)
-        {
-        	total_send_size = 0;
-        	count++;
-        }
-        if(count == 2)
+        if(t == 301)
         	break;
     }
     if (pthread_join(t1, NULL) != 0) {

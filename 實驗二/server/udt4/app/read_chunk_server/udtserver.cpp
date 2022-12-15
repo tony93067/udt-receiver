@@ -413,10 +413,12 @@ void *handle_client(void *arg)
     int j = 0;
     int fd;
     int ssize = 0;
+    int read_size = 0;
     int ss = 0;
     pthread_t t1;
     struct stat sb;
     char buffer[15] = {0};
+    char send_buf[BUFFER_SIZE] = {0};
 
     fd = open("/home/tony/論文code/論文code/file.txt", O_RDONLY, S_IRWXU);
     // get file info
@@ -425,16 +427,17 @@ void *handle_client(void *arg)
         printf("fstat error\n");
         exit(1);
     }
-    
+    /*
     // map file to memory
     file_addr = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if(file_addr == MAP_FAILED)
     {
         printf("mmap error\n");
         exit(1);
-    }
+    }*/
     int transmit_size = 0;
     transmit_size = sb.st_size;
+    int remain_data = 0;
     
     // send file size to server
     sprintf(buffer, "%d", transmit_size);
@@ -444,45 +447,53 @@ void *handle_client(void *arg)
         exit(1);
     }
     
-   while(1)
+    while(1)
     {
        if(ssize < sb.st_size)
         {
-            if(UDT::ERROR == (ss = UDT::send(client_data, (char *)file_addr + ssize, transmit_size, 0))) 
+            memset(send_buf, '\0', BUFFER_SIZE);
+            if((read_size = read(fd, send_buf, BUFFER_SIZE)) < 0)
             {
-                cout << "send:" << UDT::getlasterror().getErrorMessage() << endl;
+                printf("read error\n");
                 exit(1);
             }
-            else
+            transmit_size = read_size;
+            remain_data = 0;
+            while(1)
             {
-                // record start time when send function first called
-                if(j == 0)
+                if(UDT::ERROR == (ss = UDT::send(client_data, (char *)send_buf + remain_data, transmit_size, 0))) 
                 {
-                    //start time
-                    if((old_time = times(&time_start)) == -1)
-                    {
-                        printf("time error\n");
-                        exit(1);
-                    }
-                    pthread_create(&t1, NULL, monitor, &client_data);
+                    cout << "send:" << UDT::getlasterror().getErrorMessage() << endl;
+                    exit(1);
                 }
-                // record already sent data size
-                ssize += ss;
-                transmit_size -= ss;
+                else
+                {
+                    // record start time when send function first called
+                    if(j == 0)
+                    {
+                        //start time
+                        if((old_time = times(&time_start)) == -1)
+                        {
+                            printf("time error\n");
+                            exit(1);
+                        }
+                        pthread_create(&t1, NULL, monitor, &client_data);
+                    }
+                    // record already sent data size
+                    j++;
+                    ssize += ss;
+                    remain_data += ss;
+                    transmit_size -= ss;
+                }
+                if(transmit_size == 0)
+                    break;
             }
         }
-        total_send_size += ssize;
-        if(ssize == sb.st_size)
-        {
-            ssize = 0;
-            transmit_size = sb.st_size;
-        }
+        total_send_size = ssize;
         if(monitor_time >= 300)
             break;
-        if(total_send_size == 2*sb.st_size)
+        if(ssize == sb.st_size)
             break;
-        
-        j++;
 
     }
     cout << "end sending" << endl;
@@ -492,7 +503,6 @@ void *handle_client(void *arg)
         printf("time error\n");
         exit(1);
     }
-    munmap(file_addr, sb.st_size);
     // close file
     close(fd);
 
